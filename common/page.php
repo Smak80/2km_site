@@ -8,10 +8,12 @@ require_once ("json_loader.php");
 class page
 {
     private a_content $content;
+    private array $pages;
     private string $pages_file = "data/pages.json";
 
     public function __construct(a_content $content){
         $this->content = $content;
+        $this->pages = json_loader::get_full_info($this->pages_file);
         $this->create_headers();
         $this->create_body();
         $this->finish_page();
@@ -63,11 +65,17 @@ class page
 
     private function create_menu(): void
     {
-        $pages = json_loader::get_full_info($this->pages_file);
         print ('<div class="container w-100 p-0">');
-        foreach ($pages as $page){
+        foreach ($this->pages as $page){
             print ('<div class="row border border-danger w-100 p-0 m-0">');
-            print ("<div class='col-12 border border-black text-center p-2'><a href='{$page['page']}'>{$page['name']}</a></div>");
+            $pi = $this->get_current_page_info();
+            print ('<div class="col-12 border border-black text-center p-2">');
+            if (strcmp($pi['uri'], $page['uri']) === 0){
+                print "<div class='d-inline fw-bold'>{$page['name']}</div>";
+            } else {
+                print ("<a href='{$page['uri']}'>{$page['name']}</a>");
+            }
+            print ('</div>');
             print ('</div>');
         }
         print ('</div>');
@@ -78,6 +86,17 @@ class page
         print ('<div class="row">');
         print ('<div class="col-12 alert alert-primary text-end">© Сергей Маклецов, 2023.</div>');
         print ('</div>');
+    }
+
+    private function get_current_page_info(): array | null
+    {
+        $file = basename($_SERVER['REQUEST_URI']);
+        foreach ($this->pages as $page){
+            if (strcmp($file, $page['uri']) === 0 || strcmp($file, $page['alias']) === 0){
+                return $page;
+            }
+        }
+        return null;
     }
 
 }

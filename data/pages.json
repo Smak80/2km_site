@@ -1,11 +1,12 @@
 [
   {
-    "page": "index.php",
+    "uri": "index.php",
+    "alias": "",
     "name": "Первая",
     "header": "Стартовая страница сайта"
   },
   {
-    "page": "second.php",
+    "uri": "second.php",
     "name": "Вторая",
     "header": "Вторая страница сайта"
   }
