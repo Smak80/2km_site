@@ -92,7 +92,7 @@ class page
     {
         $file = basename($_SERVER['REQUEST_URI']);
         foreach ($this->pages as $page){
-            if (strcmp($file, $page['uri']) === 0 || strcmp($file, $page['alias']) === 0){
+            if (strcmp($file, $page['uri']) === 0 || isset($page['alias']) && strcmp($file, $page['alias']) === 0){
                 return $page;
             }
         }
