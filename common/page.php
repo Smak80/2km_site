@@ -90,7 +90,7 @@ class page
 
     private function get_current_page_info(): array | null
     {
-        $file = basename($_SERVER['REQUEST_URI']);
+        $file = preg_replace('/\\?.*/', '', basename($_SERVER['REQUEST_URI']));
         foreach ($this->pages as $page){
             if (strcmp($file, $page['uri']) === 0 || isset($page['alias']) && strcmp($file, $page['alias']) === 0){
                 return $page;

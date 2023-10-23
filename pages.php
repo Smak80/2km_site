@@ -44,7 +44,7 @@ class the_content extends \common\a_content {
         $name = $this->get_file();
         ?>
 
-        <form action="the_content.php" method="post" enctype="multipart/form-data">
+        <form action="pages.php" method="post" enctype="multipart/form-data">
             <input type="hidden" name="MAX_FILE_SIZE" value="1024000">
             <input type="file" name="userfile">
             <input type="submit" value="Отправить">
