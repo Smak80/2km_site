@@ -23,6 +23,18 @@ class the_content extends \common\a_content {
     {
         $data = '';
         if (isset($_SESSION['some_text'])) $data = $_SESSION['some_text'];
+        $hash1 = password_hash($data, PASSWORD_DEFAULT);
+        $hash2 = password_hash($data, PASSWORD_DEFAULT);
+        print($hash1);
+        print "<br/>";
+        print($hash2);
+        print "<br/>";
+        print("1: ".password_verify($data, $hash1));
+        print "<br/>";
+        print("2: ".password_verify($data, $hash2));
+        print "<br/>";
+        print("3: ".password_verify("1234567", $hash1));
+        print "<br/>";
         ?>
         <form action="session.php" method="post">
             <label>
