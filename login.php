@@ -2,21 +2,22 @@
 
 require_once ("common/page.php");
 require_once ("common/a_content.php");
-
+require_once ("common/db_helper.php");
 class the_content extends \common\a_content {
 
     public function __construct(){
+        $this->isProtected = false;
         parent::__construct();
         $this->check_user_data();
     }
 
     private bool $try_login = false;
-    private array $users = array("user1");
     private string $raw_user = '';
     private string $raw_password = '';
 
-    private function identify(string $user): bool{
-        return in_array($user, $this->users, true);
+    private function identify(): bool{
+        return \common\db_helper::get_instance()->user_exists($this->raw_user) &&
+                \common\db_helper::get_instance()->auth_ok($this->raw_user, $this->raw_password);
     }
     private function check_user_data(): void
     {
@@ -30,7 +31,7 @@ class the_content extends \common\a_content {
                     $this->raw_user = htmlspecialchars($user);
                     if (isset($_POST['password']))
                         $this->raw_password = htmlspecialchars($_POST['password']);
-                    if ($this->identify($user)) {
+                    if ($this->identify()) {
                         $_SESSION['user'] = htmlspecialchars($user);
                         header("Location: index.php");
                     }
