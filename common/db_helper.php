@@ -81,13 +81,26 @@ class db_helper
         if(!isset($user_id) || !isset($order_id) || !isset($product_id)){
             return false;
         }
+
         try {
             $this->ms->begin_transaction(name:"add_order");
-            $stmt = $this->ms->prepare("INSERT INTO `orders` (user_id, order_id, product_id) VALUES (?, ?, ?)");
-            if ($stmt === false)
-                throw new \Exception("Ошибка подготовки запроса");
-            if (!$stmt->bind_param("sss", $user_id, $order_id, $product_id))
-                throw new \Exception("Ошибка связывания параметров");
+            if($this->is_order_content_exists($user_id, $order_id, $product_id))
+            {
+                $stmt = $this->ms->prepare("UPDATE `orders` SET `count`= ? WHERE `user_id`= ? AND `order_id` = ? AND `product_id` = ?");
+                $order_count = $this->get_product_in_order_count($user_id, $order_id, $product_id) + 1;
+                if ($stmt === false)
+                    throw new \Exception("Ошибка подготовки запроса");
+                if($stmt->bind_param("iiii", $order_count, $user_id, $order_id, $product_id))
+                    throw new \Exception("Ошибка связывания параметров");
+            }
+            else
+            {
+                $stmt = $this->ms->prepare("INSERT INTO `orders` (user_id, order_id, product_id) VALUES (?, ?, ?)");
+                if ($stmt === false)
+                    throw new \Exception("Ошибка подготовки запроса");
+                if (!$stmt->bind_param("sss", $user_id, $order_id, $product_id))
+                    throw new \Exception("Ошибка связывания параметров");
+            }
             if (!$stmt->execute())
                 throw new \Exception("Ошибка выполнения запроса");
             $this->ms->commit(name:"add_order");
@@ -98,9 +111,42 @@ class db_helper
         }
     }
 
+    public function is_order_content_exists(int $user_id, int $order_id, int $product_id) : bool
+    {
+        $stmt = $this->ms->prepare("SELECT COUNT(id) FROM `orders` WHERE `user_id`=? AND `order_id` = ? AND `product_id` = ?");
+        $stmt->bind_param('iii', $user_id, $order_id, $product_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_array(MYSQLI_NUM);
+        $res = $row[0];
+        $result->close();
+        $stmt->close();
+        return $res > 0;
+    }
+
+    public function get_product_in_order_count(int $user_id, int $order_id, int $product_id) : int
+    {
+        $stmt = $this->ms->prepare("SELECT `count` FROM `orders` WHERE `user_id` = ? AND `order_id` = ? AND `product_id` = ?");
+        $stmt->bind_param("iii", $user_id, $order_id, $product_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_array(MYSQLI_ASSOC);
+        return $row['count'] ?? 0;
+    }
+
+    public function get_product_count(int $product_id) : int
+    {
+        $stmt = $this->ms->prepare("SELECT `count` FROM `products` WHERE `id` = ?");
+        $stmt->bind_param("i", $product_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_array(MYSQLI_ASSOC);
+        return $row['count'] ?? 0;
+    }
+
     public function get_order_content(int $user_id) : array
     {
-        $stmt = $this->ms->prepare("SELECT `name`, `order_id`, `count` FROM `products` INNER JOIN `orders` ON `products`.`id` = `product_id` WHERE `user_id` = ?");
+        $stmt = $this->ms->prepare("SELECT `name`, `order_id`, `count` FROM `products` INNER JOIN `orders` ON `products`.`id` = `product_id` WHERE `user_id` = ? AND `is_open` = 1");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
