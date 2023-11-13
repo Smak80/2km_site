@@ -40,7 +40,7 @@ class the_content extends \common\a_content {
             $this->raw_username
         )) $this->check_res[] = error_type::reg_error;
         else {
-            $_SESSION['user'] = $this->raw_username;
+            $_SESSION['user'] = $this->raw_login;
             header("Location: index.php");
         }
     }

@@ -60,6 +60,60 @@ class db_helper
         return $res > 0;
     }
 
+    public function get_user($login): int|null
+    {
+        if (!isset($login) || mb_strlen(trim($login))==0){
+            return null;
+        }
+        $stmt = $this->ms->prepare("SELECT `id` FROM `users` WHERE `login`=?");
+        $stmt->bind_param('s', $login);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_array(MYSQLI_NUM);
+        $res = $row[0];
+        $result->close();
+        $stmt->close();
+        return $res;
+    }
+
+    public function add_order(int $user_id, int $order_id, int $product_id) : bool
+    {
+        if(!isset($user_id) || !isset($order_id) || !isset($product_id)){
+            return false;
+        }
+        try {
+            $this->ms->begin_transaction(name:"add_order");
+            $stmt = $this->ms->prepare("INSERT INTO `orders` (user_id, order_id, product_id) VALUES (?, ?, ?)");
+            if ($stmt === false)
+                throw new \Exception("Ошибка подготовки запроса");
+            if (!$stmt->bind_param("sss", $user_id, $order_id, $product_id))
+                throw new \Exception("Ошибка связывания параметров");
+            if (!$stmt->execute())
+                throw new \Exception("Ошибка выполнения запроса");
+            $this->ms->commit(name:"add_order");
+            return true;
+        } catch (\Exception $e){
+            $this->ms->rollback(name:"add_order");
+            return false;
+        }
+    }
+
+    public function get_order_content(int $user_id) : array
+    {
+        $stmt = $this->ms->prepare("SELECT `name`, `order_id`, `count` FROM `products` INNER JOIN `orders` ON `products`.`id` = `product_id` WHERE `user_id` = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $res = array();
+        while($row = $result->fetch_array(MYSQLI_ASSOC))
+        {
+            $res[] = $row;
+        }
+        $result->close();
+        $stmt->close();
+        return $res;
+    }
+
     private function get_user_pass($user): string | null {
         $stmt = $this->ms->prepare("SELECT `password` FROM `users` WHERE `login`=?");
         $stmt->bind_param('s', $user);
@@ -78,4 +132,18 @@ class db_helper
         return password_verify($pass, $this->get_user_pass($user) ?? '');
     }
 
+    public function get_products(): array
+    {
+        $stmt = $this->ms->prepare("SELECT * FROM `products`");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $res = array();
+        while($row = $result->fetch_array(MYSQLI_ASSOC))
+        {
+            $res[] = $row;
+        }
+        $result->close();
+        $stmt->close();
+        return $res;
+    }
 }
